@@ -13,6 +13,11 @@ jobs:
       - name: 📂 Checkout Repository
         uses: actions/checkout@v4
 
+      - name: 🛠️ Patch Theano Version Logic
+        run: |
+          echo 'version = "0.9.0"' > theano/version.py
+          echo 'short_version = "0.9.0"' >> theano/version.py
+
       - name: 🐍 Set up Python 3.9
         uses: actions/setup-python@v5
         with:
