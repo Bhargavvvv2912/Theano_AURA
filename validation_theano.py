@@ -1,37 +1,38 @@
 import sys
 import os
 
-# TRICK: Disable Theano's broken config-scanning to avoid the IndexError
-os.environ["THEANO_FLAGS"] = "base_compiledir=/tmp/theano,device=cpu"
+# 1. Force flags to skip complex path lookups
+os.environ["THEANO_FLAGS"] = "base_compiledir=/tmp/theano,device=cpu,config.ignore_config_files=True"
 
-def test_theano_resurrection():
-    try:
-        # THE TRIPWIRE: 
-        # In the 2026 Attack (NumPy 2.0), this import will crash 
-        # because Theano calls np.complex, np.bool, etc.
-        import theano
-        import theano.tensor as T
-        
-        # Simple symbolic test
-        x = T.dscalar('x')
-        y = T.dscalar('y')
-        z = x + y
-        
-        print("✅ Validation Passed: Theano initialized.")
-        return True
-        
-    except IndexError:
-        # If we still hit the path error, we can't test NumPy yet.
-        # But this usually only happens if the environment is totally mangled.
-        print("❌ Validation Failed: Legacy Path/Config Error (IndexError).")
-        sys.exit(1)
-    except AttributeError as e:
-        # This is the "Attack" signature we want for the paper!
-        print(f"❌ Validation Failed: Internal Dependency Breakage (NumPy 2.0). {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"❌ Validation Failed: {type(e).__name__}: {e}")
-        sys.exit(1)
+try:
+    # 2. MONKEY PATCH: We must intercept the config parser before importing theano.tensor
+    import theano.configparser
+    
+    # We override the function that causes the IndexError with a dummy
+    def dummy_filter(*args, **kwargs):
+        return "/tmp/theano"
+    
+    # This prevents the scanner from ever reaching the broken index access
+    theano.configparser.filter_theano_cfg_file = dummy_filter
+    
+    # 3. Now perform the actual test
+    import theano
+    import theano.tensor as T
+    
+    x = T.dscalar('x')
+    y = T.dscalar('y')
+    z = x + y
+    
+    print("✅ Validation Passed: Theano initialized via Monkey Patch.")
+    sys.exit(0)
 
-if __name__ == "__main__":
-    test_theano_resurrection()
+except AttributeError as e:
+    # This is the "Attack" signature for NumPy 2.0 (Step 2)
+    print(f"❌ Validation Failed: Internal Dependency Breakage (NumPy 2.0). {e}")
+    sys.exit(1)
+except Exception as e:
+    print(f"❌ Validation Failed: {type(e).__name__}: {e}")
+    # Print the traceback so we can see where the index error is if it persists
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
