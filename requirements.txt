@@ -1,13 +1,9 @@
-# pip install --upgrade pip setuptools virtualenv virtualenvwrapper virtualenv-clone wheel
-# pip install -r requirements.txt && pyenv rehash
-
-cython
-# mpi4py
-nose
-numpy
-parameterized
-reindent
-requests
-scipy
-six
-sympy
+cython==0.29.24
+nose==1.3.7
+numpy==1.21.0
+parameterized==0.8.1
+reindent==3.5.1
+requests==2.25.1
+scipy==1.7.1
+six==1.16.0
+sympy==1.8

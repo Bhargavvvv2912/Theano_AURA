@@ -1,0 +1,9 @@
+cython
+nose
+numpy
+parameterized
+reindent
+requests
+scipy
+six
+sympy
